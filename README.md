@@ -1,13 +1,13 @@
 
-# vim-vimscript_lasterror
+# vim-vimscript\_lasterror
 
 This plugin provides to jump to the Vim script's last error.
 
 ## Usage
 
 ### :VimscriptLastError [-loclist]
-Jump to the Vim script's last error.  
-If `-loclist` is specified, Set Vim script's last errors to current loclist.  
+If `-loclist` is not specified, jump to the Vim script's last error.  
+If `-loclist` is specified, set Vim script's errors to current loclist.  
 
 ## Concepts
 
