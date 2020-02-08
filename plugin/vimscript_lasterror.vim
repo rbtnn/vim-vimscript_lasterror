@@ -25,7 +25,7 @@ function! s:vimscript_lasterror() abort
     endif
     echohl Error
     if !empty(x)
-        execute printf('silent %s%s +%d %s', (&modified ? 'new' : 'edit'), a:q_bang, x['lnum'], escape(x['filename'], ' '))
+        execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
         echo printf('%s(%d): %s', fnamemodify(x['filename'], ':.'), x['lnum'], x['text'])
     else
         echo "[vimscript_lasterror] could not find Vim script's last error"
