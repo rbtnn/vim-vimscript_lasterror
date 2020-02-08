@@ -48,7 +48,7 @@ function! s:vimscript_lasterror(q_args) abort
     echohl Error
     if !empty(xs)
         if s:LOCLIST == a:q_args
-            call setloclist(0, xs)
+            call setloclist(0, reverse(xs))
         else
             let x = xs[-1]
             execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
