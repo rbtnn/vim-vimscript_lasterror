@@ -5,8 +5,9 @@ This plugin provides to jump to the Vim script's last error.
 
 ## Usage
 
-### :VimscriptLastError
-jump to the Vim script's last error.
+### :VimscriptLastError [-loclist]
+Jump to the Vim script's last error.  
+If `-loclist` is specified, Set Vim script's last errors to current loclist.  
 
 ## Concepts
 

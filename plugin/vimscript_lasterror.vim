@@ -3,8 +3,10 @@ scriptencoding utf-8
 
 let g:loaded_vimscript_lasterror = 1
 
-function! s:vimscript_lasterror() abort
-    let x = {}
+let s:LOCLIST = '-loclist'
+
+function! s:vimscript_lasterror(q_args) abort
+    let xs = []
     let lines = split(execute('messages'), "\n")
     if 3 <= len(lines)
         for i in range(len(lines) - 2, 1, -1)
@@ -17,8 +19,13 @@ function! s:vimscript_lasterror() abort
             let errormsg = lines[i + 1]
             if !empty(file_or_func) && (0 < lnum)
                 if filereadable(file_or_func)
-                    let x = { 'filename' : file_or_func, 'lnum' : lnum, 'text' : errormsg, }
-                    break
+                    let x = { 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }
+                    if s:LOCLIST == a:q_args
+                        let xs += [x]
+                    else
+                        let xs = [x]
+                        break
+                    endif
                 else
                     let verbose_text = get(split(execute(printf('verbose %s', file_or_func)), "\n"), 1, '')
                     let m = matchlist(verbose_text, '^\s*Last set from \(.*\) line \(\d\+\)$')
@@ -26,22 +33,36 @@ function! s:vimscript_lasterror() abort
                         let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) 行 \(\d\+\)$')
                     endif
                     if !empty(m)
-                        let x = { 'filename' : m[1], 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }
-                        break
+                        let x = { 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }
+                        if s:LOCLIST == a:q_args
+                            let xs += [x]
+                        else
+                            let xs = [x]
+                            break
+                        endif
                     endif
                 endif
             endif
         endfor
     endif
     echohl Error
-    if !empty(x)
-        execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
-        echo printf('%s(%d): %s', fnamemodify(x['filename'], ':.'), x['lnum'], x['text'])
+    if !empty(xs)
+        if s:LOCLIST == a:q_args
+            call setloclist(0, xs)
+        else
+            let x = xs[-1]
+            execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
+            echo printf('%s(%d): %s', fnamemodify(x['filename'], ':.'), x['lnum'], x['text'])
+        endif
     else
         echo "[vimscript_lasterror] could not find Vim script's last error"
     endif
     echohl None
 endfunction
 
-command! -nargs=0  VimscriptLastError :call <SID>vimscript_lasterror()
+function! VimscriptLasterrorComp(ArgLead, CmdLine, CursorPos) abort
+    return [(s:LOCLIST)]
+endfunction
+
+command! -nargs=? -complete=customlist,VimscriptLasterrorComp  VimscriptLastError :call <SID>vimscript_lasterror(<q-args>)
 
