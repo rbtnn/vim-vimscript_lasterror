@@ -3,6 +3,8 @@
 
 This plugin provides to jump to the Vim script's last error.
 
+![](https://raw.githubusercontent.com/rbtnn/vim-vimscript_lasterror/master/vimscript_lasterror.gif)
+
 ## Usage
 
 ### :VimscriptLastError [-loclist]
