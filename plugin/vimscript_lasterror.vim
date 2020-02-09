@@ -40,6 +40,9 @@ function! s:vimscript_lasterror(q_args) abort
                         break
                     endif
                 else
+                    if (file_or_func =~# '^function ') && (-1 != match(file_or_func, '\.\.'))
+                        let file_or_func = printf('function %s', split(file_or_func, '\.\.')[-1])
+                    endif
                     let verbose_text = get(split(execute(printf('verbose %s', file_or_func)), "\n"), 1, '')
                     let m = matchlist(verbose_text, '^\s*Last set from \(.*\) line \(\d\+\)$')
                     if empty(m)
