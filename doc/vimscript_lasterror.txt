@@ -7,6 +7,7 @@ CONTENTS                                         *vimscript_lasterror-contents*
 
 Concepts                |vimscript_lasterror-concepts|
 Commands                |vimscript_lasterror-commands|
+Remarks                 |vimscript_lasterror-remarks|
 
 
 
@@ -21,14 +22,22 @@ Concepts                                          *vimscript_lasterror-concepts*
 ==============================================================================
 Commands                                          *vimscript_lasterror-commands*
 
-:VimscriptLastError [-loclist]                             *:VimscriptLastError*
-		If `-loclist` is not specified, jump to the Vim script's last
-		error.
+:VimscriptLastError [-loclist] [-quickfix]                 *:VimscriptLastError*
+		If `-loclist` and `-quickfix` are not specified, jump to the Vim
+		script's last error.
 		If `-loclist` is specified, set Vim script's errors to current
 		loclist.
+		If `-quickfix` is specified, set Vim script's errors to
+		quickfix.
 
-		NOTE This command find Vim script's errors from output of
-		|:messages|.
+
+
+==============================================================================
+Remarks                                            *vimscript_lasterror-remarks*
+
+* This plugin find Vim script's errors from output of `:messages`.
+* This plugin does not support a lambda function's error such as
+  `VimscriptLasterrorComp[1]..<lambda>59`.
 
 
 

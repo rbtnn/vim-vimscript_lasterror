@@ -7,9 +7,15 @@ This plugin provides to jump to the Vim script's last error.
 
 ## Usage
 
-### :VimscriptLastError [-loclist]
-If `-loclist` is not specified, jump to the Vim script's last error.  
+### :VimscriptLastError [-loclist] [-quickfix]
+If `-loclist` and `-quickfix` are not specified, jump to the Vim script's last error.  
 If `-loclist` is specified, set Vim script's errors to current loclist.  
+If `-quickfix` is specified, set Vim script's errors to quickfix.  
+
+## Remarks
+
+* This plugin find Vim script's errors from output of `:messages`.
+* This plugin does not support a lambda function's error such as `VimscriptLasterrorComp[1]..<lambda>59`.
 
 ## Concepts
 

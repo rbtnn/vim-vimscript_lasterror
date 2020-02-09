@@ -3,9 +3,22 @@ scriptencoding utf-8
 
 let g:loaded_vimscript_lasterror = 1
 
+let s:TITLE = "Vim script's errors"
+
 let s:LOCLIST = '-loclist'
+let s:QUICKFIX = '-quickfix'
+
+function! s:errmsg(msg) abort
+    echohl Error
+    echo a:msg
+    echohl None
+endfunction
 
 function! s:vimscript_lasterror(q_args) abort
+    if -1 == index([(s:LOCLIST), (s:QUICKFIX), ''], a:q_args)
+        call s:errmsg('[vimscript_lasterror] invalid arguments')
+        return
+    endif
     let xs = []
     let lines = split(execute('messages'), "\n")
     if 3 <= len(lines)
@@ -20,7 +33,7 @@ function! s:vimscript_lasterror(q_args) abort
             if !empty(file_or_func) && (0 < lnum)
                 if filereadable(file_or_func)
                     let x = { 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }
-                    if s:LOCLIST == a:q_args
+                    if (s:LOCLIST == a:q_args) || (s:QUICKFIX == a:q_args)
                         let xs += [x]
                     else
                         let xs = [x]
@@ -34,7 +47,7 @@ function! s:vimscript_lasterror(q_args) abort
                     endif
                     if !empty(m)
                         let x = { 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }
-                        if s:LOCLIST == a:q_args
+                        if (s:LOCLIST == a:q_args) || (s:QUICKFIX == a:q_args)
                             let xs += [x]
                         else
                             let xs = [x]
@@ -45,23 +58,25 @@ function! s:vimscript_lasterror(q_args) abort
             endif
         endfor
     endif
-    echohl Error
     if !empty(xs)
         if s:LOCLIST == a:q_args
-            call setloclist(0, reverse(xs))
+            call setloclist(0, reverse(xs), 'r')
+            call setloclist(0, [], 'r', { 'title': s:TITLE, })
+        elseif s:QUICKFIX == a:q_args
+            call setqflist(reverse(xs), 'r')
+            call setqflist([], 'r', { 'title': s:TITLE, })
         else
             let x = xs[-1]
             execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
-            echo printf('%s(%d): %s', fnamemodify(x['filename'], ':.'), x['lnum'], x['text'])
+            call s:errmsg(printf('%s(%d): %s', fnamemodify(x['filename'], ':.'), x['lnum'], x['text']))
         endif
     else
-        echo "[vimscript_lasterror] could not find Vim script's last error"
+        call s:errmsg("[vimscript_lasterror] could not find any Vim script's errors")
     endif
-    echohl None
 endfunction
 
 function! VimscriptLasterrorComp(ArgLead, CmdLine, CursorPos) abort
-    return [(s:LOCLIST)]
+    return filter([(s:LOCLIST), (s:QUICKFIX)], { i,x -> -1 != match(x, a:ArgLead) })
 endfunction
 
 command! -nargs=? -complete=customlist,VimscriptLasterrorComp  VimscriptLastError :call <SID>vimscript_lasterror(<q-args>)
