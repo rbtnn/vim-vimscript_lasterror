@@ -105,10 +105,7 @@ function! vimscript_lasterror#run_tests() abort
 
     let temp = tr(tempname(), '\', '/')
 
-    " https://github.com/vim-jp/issues/issues/867
-    if has("patch-7.4.1738")
-        call execute('messages clear')
-    endif
+    messages clear
 
     call writefile([
         \ 'function! s:test_1() abort',
@@ -131,7 +128,7 @@ function! vimscript_lasterror#run_tests() abort
 
     let xs = vimscript_lasterror#parse_messages()
 
-    call assert_match('<lambda>\d\+(1): E488: Trailing characters: 5 = 6', xs[0]['text'])
+    call assert_match('^<lambda>\d\+(1): \(E488: Trailing characters: 5 = 6\|E16: Invalid range: 5 = 6\)', xs[0]['text'])
     call assert_equal(#{ text: 'E15: Invalid expression: 3 = 4', lnum: 1, filename: temp, }, xs[1])
     call assert_equal(#{ text: 'E15: Invalid expression: 1 = 2', lnum: 2, filename: temp, }, xs[2])
 
