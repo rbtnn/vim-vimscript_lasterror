@@ -107,7 +107,7 @@ function! vimscript_lasterror#run_tests() abort
 
     " https://github.com/vim-jp/issues/issues/867
     if has("patch-7.4.1738")
-        messages clear
+        call execute('messages clear')
     endif
 
     call writefile([
