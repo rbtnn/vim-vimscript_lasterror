@@ -1,5 +1,6 @@
 
-# vim-vimscript\_lasterror
+# vim-vimscript\_lasterror [![Build Status](https://travis-ci.org/rbtnn/vim-vimscript_lasterror.svg?branch=master)](https://travis-ci.org/rbtnn/vim-vimscript_lasterror)
+
 
 This plugin provides to jump to the Vim script's last error.
 
