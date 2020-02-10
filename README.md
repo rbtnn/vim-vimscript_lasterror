@@ -20,6 +20,7 @@ If `-quickfix` is specified, set Vim script's errors to quickfix.
 
 ## Concepts
 
+* This plugin supports Vim and Neovim.
 * This plugin does not provide to customize user-settings.
 * This plugin provides only one command.
 

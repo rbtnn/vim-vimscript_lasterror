@@ -14,6 +14,7 @@ Remarks                 |vimscript_lasterror-remarks|
 ==============================================================================
 Concepts                                          *vimscript_lasterror-concepts*
 
+* This plugin supports Vim and Neovim.
 * This plugin does not provide to customize user-settings.
 * This plugin provides only one command.
 

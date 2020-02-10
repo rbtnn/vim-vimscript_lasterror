@@ -1,4 +1,6 @@
 
+scriptencoding utf-8
+
 let s:TEST_LOG = expand('<sfile>:h:h:gs?\?/?') . '/test.log'
 let s:TITLE = "Vim script's errors"
 let s:LOCLIST = '-loclist'
@@ -18,7 +20,7 @@ function! vimscript_lasterror#exec(q_args) abort
                 call setqflist(reverse(xs), 'r')
                 call setqflist([], 'r', { 'title': s:TITLE, })
             else
-                let x = xs[-1]
+                let x = xs[0]
                 if filereadable(get(x, 'filename', ''))
                     execute printf('silent %s +%d %s', (&modified ? 'new' : 'edit'), x['lnum'], escape(x['filename'], ' '))
                     normal! zz
@@ -64,8 +66,7 @@ function! vimscript_lasterror#parse_messages() abort
             let errormsg = lines[i + 1]
             if !empty(file_or_func) && (0 < lnum)
                 if filereadable(file_or_func)
-                    let x = { 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }
-                    let xs += [x]
+                    let xs += [{ 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }]
                 else
                     if (file_or_func =~# '^function ') && (-1 != match(file_or_func, '\.\.'))
                         let file_or_func = printf('function %s', split(file_or_func, '\.\.')[-1])
@@ -78,15 +79,16 @@ function! vimscript_lasterror#parse_messages() abort
                             let verbose_text = get(split(execute(printf('verbose %s', file_or_func)), "\n"), 1, '')
                             let m = matchlist(verbose_text, '^\s*Last set from \(.*\) line \(\d\+\)$')
                             if empty(m)
-                                let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) 行 \(\d\+\)$')
+                                let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) \%(行\|line\) \(\d\+\)$')
                             endif
                             if !empty(m)
-                                let x = { 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }
-                                let xs += [x]
+                                let xs += [{ 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }]
+                            else
+                                let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
+                                let xs += [{ 'text' : text, }]
                             endif
                         catch
-                            let x = { 'text' : v:exception, }
-                            let xs += [x]
+                            let xs += [{ 'text' : v:exception, }]
                         endtry
                     endif
                 endif
@@ -103,7 +105,7 @@ function! vimscript_lasterror#run_tests() abort
 
     let v:errors = []
 
-    let temp = tr(tempname(), '\', '/')
+    let temp = tempname()
 
     messages clear
 
@@ -128,9 +130,15 @@ function! vimscript_lasterror#run_tests() abort
 
     let xs = vimscript_lasterror#parse_messages()
 
-    call assert_match('^<lambda>\d\+(1): \(E488: Trailing characters: 5 = 6\|E16: Invalid range: 5 = 6\)', xs[0]['text'])
-    call assert_equal(#{ text: 'E15: Invalid expression: 3 = 4', lnum: 1, filename: temp, }, xs[1])
-    call assert_equal(#{ text: 'E15: Invalid expression: 1 = 2', lnum: 2, filename: temp, }, xs[2])
+    let FixPath = { path -> substitute(path, '[\/]\+', '/', 'g') }
+
+    call assert_match('^<lambda>\d\+(1): \(E488:\|E16:\)', xs[0]['text'])
+    call assert_match('^E15', xs[1]['text'])
+    call assert_match('^E15', xs[2]['text'])
+    call assert_equal(1, xs[1]['lnum'])
+    call assert_equal(2, xs[2]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[1]['filename']))
+    call assert_equal(FixPath(temp), FixPath(xs[2]['filename']))
 
     call delete(temp)
 
