@@ -79,7 +79,7 @@ function! vimscript_lasterror#parse_messages() abort
                     let xs += s:new_error(errormsg, file_or_func, expand(file_or_func), lnum)
                 elseif file_or_func =~# '^<lambda>'
                     let text = printf('%s(%d): %s', file_or_func, lnum, errormsg)
-                    let xs += s:new_error(text, file_or_func)
+                    let xs += s:new_error(text, file_or_func, '', -1)
                 else
                     try
                         let verbose_text = get(split(execute(printf('verbose function %s', file_or_func)), "\n"), 1, '')
@@ -91,10 +91,10 @@ function! vimscript_lasterror#parse_messages() abort
                             let xs += s:new_error(errormsg, file_or_func, expand(m[1]), lnum + str2nr(m[2]))
                         else
                             let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
-                            let xs += s:new_error(text, file_or_func)
+                            let xs += s:new_error(text, file_or_func, '', -1)
                         endif
                     catch
-                        let xs += s:new_error(v:exception, file_or_func)
+                        let xs += s:new_error(v:exception, file_or_func, '', -1)
                     endtry
                 endif
             endif
@@ -103,7 +103,7 @@ function! vimscript_lasterror#parse_messages() abort
     return xs
 endfunction
 
-function! s:new_error(text, file_or_func, filename = '', lnum = -1) abort
+function! s:new_error(text, file_or_func, filename, lnum) abort
     return [{ 'filename' : a:filename, 'lnum' : a:lnum, 'text' : a:text, 'file_or_func' : a:file_or_func, }]
 endfunction
 
