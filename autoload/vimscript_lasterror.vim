@@ -76,10 +76,10 @@ function! vimscript_lasterror#parse_messages() abort
                 endif
 
                 if filereadable(file_or_func)
-                    let xs += [{ 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }]
+                    let xs += s:new_error(errormsg, file_or_func, expand(file_or_func), lnum)
                 elseif file_or_func =~# '^<lambda>'
                     let text = printf('%s(%d): %s', file_or_func, lnum, errormsg)
-                    let xs += [{ 'text' : text, }]
+                    let xs += s:new_error(text, file_or_func)
                 else
                     try
                         let verbose_text = get(split(execute(printf('verbose function %s', file_or_func)), "\n"), 1, '')
@@ -88,19 +88,23 @@ function! vimscript_lasterror#parse_messages() abort
                             let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) \%(行\|line\) \(\d\+\)$')
                         endif
                         if !empty(m)
-                            let xs += [{ 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }]
+                            let xs += s:new_error(errormsg, file_or_func, expand(m[1]), lnum + str2nr(m[2]))
                         else
                             let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
-                            let xs += [{ 'text' : text, }]
+                            let xs += s:new_error(text, file_or_func)
                         endif
                     catch
-                        let xs += [{ 'text' : v:exception, }]
+                        let xs += s:new_error(v:exception, file_or_func)
                     endtry
                 endif
             endif
         endfor
     endif
     return xs
+endfunction
+
+function! s:new_error(text, file_or_func, filename = '', lnum = -1) abort
+    return [{ 'filename' : a:filename, 'lnum' : a:lnum, 'text' : a:text, 'file_or_func' : a:file_or_func, }]
 endfunction
 
 function! vimscript_lasterror#run_tests() abort
@@ -116,34 +120,77 @@ function! vimscript_lasterror#run_tests() abort
 
     messages clear
     call writefile([
-        \ 'function! s:test_1() abort',
+        \ '" THIS IS A OUTTER COMMENT LINE.',
+        \ 'function! s:test_scriptfunc() abort',
+        \ '    " THIS IS A INNER COMMENT LINE.',
         \ '    let i = 1 = 2',
         \ 'endfunction',
-        \ 'call s:test_1()',
+        \ 'call s:test_scriptfunc()',
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
     call assert_match('^E15', xs[0]['text'])
+    call assert_match('^<SNR>\d\+_test_scriptfunc$', xs[0]['file_or_func'])
+    call assert_equal(4, xs[0]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
+
+    messages clear
+    call writefile([
+        \ '" THIS IS A OUTTER COMMENT LINE.',
+        \ 'function! Test_globalfunc() abort',
+        \ '    " THIS IS AN INNER COMMENT LINE.',
+        \ '    let i = 3 = 4',
+        \ 'endfunction',
+        \ 'call Test_globalfunc()',
+        \ ], temp)
+    execute printf('source %s', escape(temp, ' \'))
+    let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^E15', xs[0]['text'])
+    call assert_equal('Test_globalfunc', xs[0]['file_or_func'])
+    call assert_equal(4, xs[0]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
+
+    messages clear
+    call writefile([
+        \ '" THIS IS A OUTTER COMMENT LINE.',
+        \ 'function! Test_globalfunc() abort',
+        \ '    " THIS IS AN INNER COMMENT LINE.',
+        \ '    function! s:test_scriptfunc() abort',
+        \ '        " THIS IS AN INNER COMMENT LINE.',
+        \ '        let i = 5 = 6',
+        \ '    endfunction',
+        \ '    call s:test_scriptfunc()',
+        \ 'endfunction',
+        \ 'call Test_globalfunc()',
+        \ ], temp)
+    execute printf('source %s', escape(temp, ' \'))
+    let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^E15', xs[0]['text'])
+    call assert_match('^<SNR>\d\+_test_scriptfunc$', xs[0]['file_or_func'])
+    call assert_equal(6, xs[0]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
+
+    messages clear
+    call writefile([
+        \ '" THIS IS A OUTTER COMMENT LINE.',
+        \ 'let i = 7 = 8',
+        \ ], temp)
+    execute printf('source %s', escape(temp, ' \'))
+    let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^E15', xs[0]['text'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['file_or_func']))
     call assert_equal(2, xs[0]['lnum'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
 
     messages clear
     call writefile([
-        \ 'let i = 3 = 4',
-        \ ], temp)
-    execute printf('source %s', escape(temp, ' \'))
-    let xs = vimscript_lasterror#parse_messages()
-    call assert_match('^E15', xs[0]['text'])
-    call assert_equal(1, xs[0]['lnum'])
-    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
-
-    messages clear
-    call writefile([
-        \ 'let F = { -> execute("5 = 6") }',
+        \ '" THIS IS A OUTTER COMMENT LINE.',
+        \ 'let F = { -> execute("9 = 10") }',
         \ 'call F()',
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^<lambda>\d\+$', xs[0]['file_or_func'])
     call assert_match('^<lambda>\d\+(1): \(E488:\|E16:\)', xs[0]['text'])
 
     call delete(temp)
