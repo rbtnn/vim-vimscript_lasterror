@@ -65,32 +65,37 @@ function! vimscript_lasterror#parse_messages() abort
             endif
             let errormsg = lines[i + 1]
             if !empty(file_or_func) && (0 < lnum)
+                if -1 != match(file_or_func, '\.\.')
+                    let file_or_func = split(file_or_func, '\.\.')[-1]
+                endif
+
+                if (file_or_func =~# '^function ')
+                    let file_or_func = file_or_func[9:]
+                elseif (file_or_func =~# '^script ')
+                    let file_or_func = file_or_func[7:]
+                endif
+
                 if filereadable(file_or_func)
                     let xs += [{ 'filename' : expand(file_or_func), 'lnum' : lnum, 'text' : errormsg, }]
+                elseif file_or_func =~# '^<lambda>'
+                    let text = printf('%s(%d): %s', file_or_func, lnum, errormsg)
+                    let xs += [{ 'text' : text, }]
                 else
-                    if (file_or_func =~# '^function ') && (-1 != match(file_or_func, '\.\.'))
-                        let file_or_func = printf('function %s', split(file_or_func, '\.\.')[-1])
-                    endif
-                    if file_or_func =~# '^function <lambda>'
-                        let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
-                        let xs += [{ 'text' : text, }]
-                    else
-                        try
-                            let verbose_text = get(split(execute(printf('verbose %s', file_or_func)), "\n"), 1, '')
-                            let m = matchlist(verbose_text, '^\s*Last set from \(.*\) line \(\d\+\)$')
-                            if empty(m)
-                                let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) \%(行\|line\) \(\d\+\)$')
-                            endif
-                            if !empty(m)
-                                let xs += [{ 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }]
-                            else
-                                let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
-                                let xs += [{ 'text' : text, }]
-                            endif
-                        catch
-                            let xs += [{ 'text' : v:exception, }]
-                        endtry
-                    endif
+                    try
+                        let verbose_text = get(split(execute(printf('verbose function %s', file_or_func)), "\n"), 1, '')
+                        let m = matchlist(verbose_text, '^\s*Last set from \(.*\) line \(\d\+\)$')
+                        if empty(m)
+                            let m = matchlist(verbose_text, '^\s*最後にセットしたスクリプト: \(.*\) \%(行\|line\) \(\d\+\)$')
+                        endif
+                        if !empty(m)
+                            let xs += [{ 'filename' : expand(m[1]), 'lnum' : lnum + str2nr(m[2]), 'text' : errormsg, }]
+                        else
+                            let text = printf('%s(%d): %s', file_or_func[len('function '):], lnum, errormsg)
+                            let xs += [{ 'text' : text, }]
+                        endif
+                    catch
+                        let xs += [{ 'text' : v:exception, }]
+                    endtry
                 endif
             endif
         endfor
@@ -105,10 +110,11 @@ function! vimscript_lasterror#run_tests() abort
 
     let v:errors = []
 
+    let FixPath = { path -> substitute(path, '[\/]\+', '/', 'g') }
+
     let temp = tempname()
 
     messages clear
-
     call writefile([
         \ 'function! s:test_1() abort',
         \ '    let i = 1 = 2',
@@ -116,29 +122,29 @@ function! vimscript_lasterror#run_tests() abort
         \ 'call s:test_1()',
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
+    let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^E15', xs[0]['text'])
+    call assert_equal(2, xs[0]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
 
+    messages clear
     call writefile([
         \ 'let i = 3 = 4',
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
+    let xs = vimscript_lasterror#parse_messages()
+    call assert_match('^E15', xs[0]['text'])
+    call assert_equal(1, xs[0]['lnum'])
+    call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
 
+    messages clear
     call writefile([
         \ 'let F = { -> execute("5 = 6") }',
         \ 'call F()',
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
-
     let xs = vimscript_lasterror#parse_messages()
-
-    let FixPath = { path -> substitute(path, '[\/]\+', '/', 'g') }
-
     call assert_match('^<lambda>\d\+(1): \(E488:\|E16:\)', xs[0]['text'])
-    call assert_match('^E15', xs[1]['text'])
-    call assert_match('^E15', xs[2]['text'])
-    call assert_equal(1, xs[1]['lnum'])
-    call assert_equal(2, xs[2]['lnum'])
-    call assert_equal(FixPath(temp), FixPath(xs[1]['filename']))
-    call assert_equal(FixPath(temp), FixPath(xs[2]['filename']))
 
     call delete(temp)
 
