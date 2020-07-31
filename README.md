@@ -1,6 +1,6 @@
 
 # vim-vimscript\_lasterror
-[![vim](https://github.com/rbtnn/vim-vimscript_lasterror/workflows/vim/badge.svg)](https://github.com/rbtnn/vim-vim-vimscript_lasterror/actions?query=workflow%3Avim)
+[![vim](https://github.com/rbtnn/vim-vimscript_lasterror/workflows/vim/badge.svg)](https://github.com/rbtnn/vim-vimscript_lasterror/actions?query=workflow%3Avim)
 [![neovim](https://github.com/rbtnn/vim-vimscript_lasterror/workflows/neovim/badge.svg)](https://github.com/rbtnn/vim-vimscript_lasterror/actions?query=workflow%3Aneovim)
 
 This plugin provides to jump to the Vim script's last error.
