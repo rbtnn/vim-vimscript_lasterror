@@ -17,7 +17,7 @@ If `-quickfix` is specified, set Vim script's errors to quickfix.
 ## Remarks
 
 * This plugin find Vim script's errors from output of `:messages`.
-* This plugin does not support a lambda function's error such as `VimscriptLasterrorComp[1]..<lambda>59`.
+* Ignore E384 and E385.
 
 ## Concepts
 

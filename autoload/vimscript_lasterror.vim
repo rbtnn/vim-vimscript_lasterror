@@ -6,6 +6,9 @@ let s:TITLE = "Vim script's errors"
 let s:LOCLIST = '-loclist'
 let s:QUICKFIX = '-quickfix'
 
+" Ignore E384 and E385 (=search hit TOP/BOTTOM without match for)
+let s:IGNORE_PATTERN = '^\(E384\|E385\): '
+
 function! vimscript_lasterror#exec(q_args) abort
     if -1 == index([(s:LOCLIST), (s:QUICKFIX), ''], a:q_args)
         echohl Error
@@ -119,7 +122,7 @@ function! vimscript_lasterror#parse_messages() abort
 endfunction
 
 function! s:parse_messages(line) abort
-    if a:line =~# '^E\d\+: '
+    if (a:line =~# '^E\d\+: ') && (a:line !~# s:IGNORE_PATTERN)
         return { 'kind' : 'message', 'message' : a:line, }
     endif
 
@@ -168,7 +171,7 @@ function! vimscript_lasterror#run_tests() abort
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
-    call assert_match('^E15', xs[0]['text'])
+    call assert_match('^\(E15\|E488\)', xs[0]['text'])
     call assert_match('^<SNR>\d\+_test_scriptfunc$', xs[0]['file_or_func'])
     call assert_equal(4, xs[0]['lnum'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
@@ -184,7 +187,7 @@ function! vimscript_lasterror#run_tests() abort
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
-    call assert_match('^E15', xs[0]['text'])
+    call assert_match('^\(E15\|E488\)', xs[0]['text'])
     call assert_equal('Test_globalfunc', xs[0]['file_or_func'])
     call assert_equal(4, xs[0]['lnum'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
@@ -204,7 +207,7 @@ function! vimscript_lasterror#run_tests() abort
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
-    call assert_match('^E15', xs[0]['text'])
+    call assert_match('^\(E15\|E488\)', xs[0]['text'])
     call assert_match('^<SNR>\d\+_test_scriptfunc$', xs[0]['file_or_func'])
     call assert_equal(6, xs[0]['lnum'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
@@ -216,7 +219,7 @@ function! vimscript_lasterror#run_tests() abort
         \ ], temp)
     execute printf('source %s', escape(temp, ' \'))
     let xs = vimscript_lasterror#parse_messages()
-    call assert_match('^E15', xs[0]['text'])
+    call assert_match('^\(E15\|E488\)', xs[0]['text'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['file_or_func']))
     call assert_equal(2, xs[0]['lnum'])
     call assert_equal(FixPath(temp), FixPath(xs[0]['filename']))
