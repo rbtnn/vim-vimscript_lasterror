@@ -17,7 +17,9 @@ If `-quickfix` is specified, set Vim script's errors to quickfix.
 ## Remarks
 
 * This plugin find Vim script's errors from output of `:messages`.
-* Ignore E384 and E385.
+" This plugin does not treat E384 as a error(=`search hit TOP without match for:`)
+" This plugin does not treat E385 as a error(=`search hit BOTTOM without match for:`)
+" This plugin does not treat E553 as a error(=`No more items`)
 
 ## Concepts
 

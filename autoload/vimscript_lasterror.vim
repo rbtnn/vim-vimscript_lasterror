@@ -6,8 +6,10 @@ let s:TITLE = "Vim script's errors"
 let s:LOCLIST = '-loclist'
 let s:QUICKFIX = '-quickfix'
 
-" Ignore E384 and E385 (=search hit TOP/BOTTOM without match for)
-let s:IGNORE_PATTERN = '^\(E384\|E385\): '
+" Does not treat E384 as a error(=`search hit TOP without match for:`)
+" Does not treat E385 as a error(=`search hit BOTTOM without match for:`)
+" Does not treat E553 as a error(=`No more items`)
+let s:NOT_TREAT_PATTERN = '^\(' .. join(['E384', 'E385', 'E553'], '\|') .. '\): '
 
 function! vimscript_lasterror#exec(q_args) abort
     if -1 == index([(s:LOCLIST), (s:QUICKFIX), ''], a:q_args)
@@ -122,7 +124,7 @@ function! vimscript_lasterror#parse_messages() abort
 endfunction
 
 function! s:parse_messages(line) abort
-    if (a:line =~# '^E\d\+: ') && (a:line !~# s:IGNORE_PATTERN)
+    if (a:line =~# '^E\d\+: ') && (a:line !~# s:NOT_TREAT_PATTERN)
         return { 'kind' : 'message', 'message' : a:line, }
     endif
 
