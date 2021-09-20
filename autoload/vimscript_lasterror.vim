@@ -70,7 +70,7 @@ endfunction
 function! vimscript_lasterror#exec_noargs() abort
 	let xs = vimscript_lasterror#parse_messages()
 	if !empty(xs)
-		let x = xs[0]
+		let x = xs[-1]
 		if filereadable(get(x, 'filename', ''))
 			if s:find_window_by_path(x['filename'])
 				execute printf(':%d', x['lnum'])
