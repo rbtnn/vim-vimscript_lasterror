@@ -9,10 +9,13 @@ This plugin provides to jump to the Vim script's last error.
 
 ## Usage
 
-### :VimscriptLastError [-loclist] [-quickfix]
-If `-loclist` and `-quickfix` are not specified, jump to the Vim script's last error.  
+### :VimscriptLastError [-loclist] [-quickfix] [-messages]
+If arguments are not specified, try jumping to the Vim script's last error.  
 If `-loclist` is specified, set Vim script's errors to current loclist.  
 If `-quickfix` is specified, set Vim script's errors to quickfix.  
+If `-messages` is specified, dump the output of `:messages` to new window.
+Typing `<cr>` under a Vim script's error line in the window, You can jump to the location.
+
 
 ## Remarks
 
